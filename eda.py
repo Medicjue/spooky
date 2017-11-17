@@ -7,6 +7,7 @@ Exploratory Data
 """
 import pandas as pd
 import jieba
+import gc
 
 train_data = pd.read_csv('data/train.csv')
 
@@ -19,3 +20,10 @@ for index, row in train_data.iterrows():
 #    print('{} - {}'.format(label, tokens))
     for token in tokens:
         vocabs[token] = vocabs.get(token, 0) + 1
+              
+              
+f = open('data/wiki.en.vec', 'r', encoding='utf8')
+f.readline()
+f.close()
+
+gc.collect()

@@ -69,7 +69,7 @@ for tokens in raw_tokens:
 gc.collect()
 
 #model = RandomForestClassifier(n_jobs=4, random_state=random_seed)
-model = SVC(kernel="linear", C=1000, probability=True)
+model = SVC(kernel="linear", C=1000, probability=True, random_state=random_seed)
 model.fit(one_hot_tokens, labels)
 
 test_data = pd.read_csv('data/test.csv')

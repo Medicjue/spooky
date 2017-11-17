@@ -19,3 +19,6 @@ Removing stopwords, removing marks
 Getting worse
 Result: 1.38007
 
+11/15
+Using SVM(Linear)
+Result: 0.60411
