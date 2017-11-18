@@ -8,13 +8,15 @@ Word2Vec Clustering
 import numpy as np
 import gc
 import pandas as pd
-import pickle
+#import pickle
 
 from sklearn.cluster import KMeans
 
 import datetime
 
 random_seed = 23
+
+k_range = [40, 60, 80, 100]
 
 words = []
 words_vec = []
@@ -35,22 +37,29 @@ f.close()
 end = datetime.datetime.now()
 gc.collect()
 
+words_vec = np.asarray(words_vec)
+words_vec = np.append(words_vec, [words_vec.mean(axis=0)], axis=0)
+words.append('MMMMMMMM')
+
 #print('Output File')
 #f = open('data/words.np', 'wb')
 #pickle.dump(words, f)
 #f.close()
-#
+
 #f = open('data/wv.np', 'wb')
-#pickle.dump(words_vec, f)
+#pickle.dump(words_vec, f, protocol=4)
 #f.close()
 
 print('Read Data Done, time consume: {}'.format(end-start))
-start = datetime.datetime.now()
-kmeans = KMeans(n_clusters=20, random_state=random_seed, n_jobs=-1).fit(words_vec)
-end = datetime.datetime.now()
-print('KMeans Done, time consume: {}'.format(end-start))
-
-result = pd.DataFrame()
-result['word'] = pd.Series(words)
-result['cluster'] = pd.Series(kmeans.labels_)
-result.to_csv('tmp/cluster_20_result.csv', index=False)
+for k in k_range:
+    start = datetime.datetime.now()
+    kmeans = KMeans(n_clusters=k, random_state=random_seed, n_jobs=6).fit(words_vec)
+    end = datetime.datetime.now()
+    print('KMeans Done, time consume: {}'.format(end-start))
+    
+    result = pd.DataFrame()
+    result['word'] = pd.Series(words)
+    result['cluster'] = pd.Series(kmeans.labels_)
+    result.to_csv('tmp/cluster_{}_result.csv'.format(k), index=False)
+    del(result)
+    gc.collect()

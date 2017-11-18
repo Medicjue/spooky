@@ -22,3 +22,15 @@ Result: 1.38007
 11/15
 Using SVM(Linear)
 Result: 0.60411
+
+11/18
+Download fasttext pretrain word vectors
+https://github.com/facebookresearch/fastText/blob/master/pretrained-vectors.md
+Using k-means to cluster vectors into 20 groups
+Convert text into histogram vectors
+Then use SVM as classifier
+Result: 1.05575
+
+11/18
+k-means into 40 groups
+Result: 1.04287
