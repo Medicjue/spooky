@@ -16,7 +16,7 @@ import datetime
 
 random_seed = 23
 
-k_range = [40, 60, 80, 100]
+k_range = [80]
 
 words = []
 words_vec = []
