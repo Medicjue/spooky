@@ -34,3 +34,7 @@ Result: 1.05575
 11/18
 k-means into 40 groups
 Result: 1.04287
+
+11/21
+Apply fastText
+Result: 2.06847

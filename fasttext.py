@@ -19,7 +19,7 @@ for index, row in train_data.iterrows():
     text = row[1].lower()
     label = row[2]
     tokens = set(jieba.lcut(text))
-    f.write('__label__{} {}'.format(label, ' '.join(tokens)))
+    f.write('__label__{} {}\n'.format(label, ' '.join(tokens)))
     
 f.close()
     
@@ -28,6 +28,6 @@ test_data = pd.read_csv('data/test.csv')
 for index, row in test_data.iterrows():
     text = row[1].lower()
     tokens = set(jieba.lcut(text))
-    f.write('{}'.format(' '.join(tokens)))
+    f.write('__label__0 {}\n'.format(' '.join(tokens)))
     
 f.close()
