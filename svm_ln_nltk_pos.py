@@ -1,22 +1,55 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 15 00:28:18 2017
+Created on Fri Nov 24 23:14:31 2017
 
-baseline Full Program
+SVM (Linear) + NLTK preprocessing + POS Tag
 """
 
 import pandas as pd
 import jieba
 import numpy as np
 import gc
+from nltk import pos_tag
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
 import datetime
-
 
 #from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 
-random_seed = 23
+random_seed = 13
+
+stop = set(stopwords.words('english'))
+
+stemmer = SnowballStemmer('english')
+
+punctuation = set([',', '.', ' ', '"', '\'', '?', '-', '+', '=', '!'])
+
+
+def work_prep(sentence):
+    words = word_tokenize(text)
+    words_with_tag = pos_tag(words)
+    tokens = []
+    for word_with_tag in words_with_tag:
+        if 'JJ' in word_with_tag[1]:
+            tokens.append(word_with_tag[0])
+    tokens = set(tokens)
+    tokens = tokens - stop
+    tokens = tokens - punctuation
+    new_tokens = []
+    for token in tokens:
+        new_tokens.append(recursive_stem(token))
+    return set(new_tokens)
+    
+    
+def recursive_stem(token):
+    new_token = stemmer.stem(token)
+    if token == new_token:
+        return token
+    else:
+        return recursive_stem(new_token)
 
 train_data = pd.read_csv('data/train.csv')
 
@@ -27,35 +60,12 @@ labels = []
 for index, row in train_data.iterrows():
     text = row[1].lower()
     label = row[2]
-    tokens = set(jieba.lcut(text))
+    tokens = work_prep(text)
     raw_tokens.append(tokens)
     vocabs |= tokens
     labels.append(label)
-    
-punctuation = set([',', '.', ' ', '"', '\'', '?', '-', '+', '=', '!'])
-vocabs = vocabs - punctuation
-vocabs = list(vocabs)
-#vocabs.remove(' ')
-#vocabs.remove('.')
-#vocabs.remove(',')
-#vocabs.remove('"')
-#vocabs.remove('\'')
-#vocabs.remove('?')
-    
-"""
-stopwords = pd.read_csv('data/stopwords.csv')
-stopwords = stopwords['stopwords'].as_matrix()
-    
 
-
-
-for stopword in stopwords:
-    try:
-        vocabs.remove(stopword)
-    except:
-        print('stopword - \'{}\' not in vocabs'.format(stopword))
-"""
-
+print('collect tokens done')
 vocab_size = len(vocabs)
 one_hot_tokens = []
 
@@ -71,14 +81,14 @@ for tokens in raw_tokens:
     
 gc.collect()
 
-#model = RandomForestClassifier(n_jobs=4, random_state=random_seed)
-print('Start train SVM model')
+print('convert 2 one-hot done')
+
 start = datetime.datetime.now()
-model = SVC(kernel="linear", C=2000, probability=True, random_state=random_seed)
+#model = RandomForestClassifier(n_jobs=4, random_state=random_seed)
+model = SVC(kernel="linear", C=1000, probability=True, random_state=random_seed)
 model.fit(one_hot_tokens, labels)
 end = datetime.datetime.now()
-print('End training, time consume: {}'.format(end-start))
-
+print('model training done, time consume:{}'.format(end-start))
 test_data = pd.read_csv('data/test.csv')
 
 ids = []
@@ -86,7 +96,8 @@ test_one_hot_tokens = []
 for index, row in test_data.iterrows():
     ids.append(row[0])
     text = row[1].lower()
-    tokens = set(jieba.lcut(text))
+#    tokens = set(jieba.lcut(text))
+    tokens = work_prep(text)
     one_hot_token = np.zeros(vocab_size+1, dtype=bool)
     for token in tokens:
         try:
@@ -97,6 +108,7 @@ for index, row in test_data.iterrows():
     test_one_hot_tokens.append(one_hot_token)
     
 gc.collect()
+print('convert test data 2 one-hot done')
 
 test_result = pd.DataFrame()
 test_result['id'] = pd.Series(ids)
@@ -104,8 +116,10 @@ test_result['id'] = pd.Series(ids)
 test_data_prob = model.predict_proba(test_one_hot_tokens)
 test_data_prob = pd.DataFrame(test_data_prob, columns=['EAP','HPL','MWS'])
 
+print('model inference done')
+
 test_result['EAP'] = test_data_prob['EAP']
 test_result['HPL'] = test_data_prob['HPL']
 test_result['MWS'] = test_data_prob['MWS']
 
-test_result.to_csv('tmp/baselineFull_1124_c2k.csv', index=False)
+test_result.to_csv('tmp/svm_ln_pos.csv', index=False)

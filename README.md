@@ -38,3 +38,10 @@ Result: 1.04287
 11/21
 Apply fastText
 Result: 2.06847
+
+
+
+11/28
+LSTM 1 epoch
+NTLK
+Result: 2.42336
