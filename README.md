@@ -45,3 +45,8 @@ Result: 2.06847
 LSTM 1 epoch
 NTLK
 Result: 2.42336
+
+11/29
+LSTM 10 epochs
+NLTK
+Result: 5.45540

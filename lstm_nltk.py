@@ -7,27 +7,26 @@ LSTM + NLTK preprocessing + POS Tag
 """
 
 import pandas as pd
-import numpy as np
 import gc
-from nltk import pos_tag
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 import datetime
 
+from sklearn.utils import shuffle
+
 from keras.preprocessing import sequence
 from keras.preprocessing.text import Tokenizer
 
 from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation, Flatten
+from keras.layers.core import Dense, Dropout
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
 from keras.utils import to_categorical
 
-#from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-
 random_seed = 13
+
+train_epochs = 10
 
 stop = set(stopwords.words('english'))
 
@@ -68,11 +67,13 @@ def create_model(random_seed, vocab_size, max_sent_length):
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
 
+start = datetime.datetime.now()
 train_data = pd.read_csv('data/train.csv')
 
 vocabs = set()
 raw_tokens = []
-sentences = []
+all_sentences = []
+train_sentences = []
 labels = []
 max_sent_length = 0
 
@@ -81,95 +82,77 @@ for index, row in train_data.iterrows():
     sent_length = len(text.split(' '))
     if sent_length > max_sent_length:
         max_sent_length = sent_length
-    sentences.append(text)
+    all_sentences.append(text)
+    train_sentences.append(text)
     label = row[2]
     tokens = work_prep(text)
     raw_tokens.append(list(tokens))
     vocabs |= tokens
     labels.append(label_map.index(label))
 
-
-
-print('collect tokens done')
-
-
-vocab_size = len(vocabs)
-
-tokenizer = Tokenizer(vocab_size)
-
-tokenizer.fit_on_texts(sentences)
-
-x_train_seq = tokenizer.texts_to_sequences(sentences)
-
-x_train = sequence.pad_sequences(x_train_seq, max_sent_length)
-
-model = create_model(random_seed, vocab_size, max_sent_length)
-
-y_train = to_categorical(labels)
-
-histroys = model.fit(x_train, y_train, epochs=1, batch_size=32, validation_split=0.1)
-
-one_hot_tokens = []
-
-for tokens in raw_tokens:
-    one_hot_token = np.zeros(vocab_size+1, dtype=bool)
-    for token in tokens:
-        try:
-            one_hot_token[vocabs.index(token)] = True
-        except:
-            ## Mark as others
-            one_hot_token[vocab_size] = True
-    one_hot_tokens.append(one_hot_token)
-    
-gc.collect()
-
-print('convert 2 one-hot done')
-
-start = datetime.datetime.now()
-#model = RandomForestClassifier(n_jobs=4, random_state=random_seed)
-model = SVC(kernel="linear", C=1000, probability=True, random_state=random_seed)
-model.fit(one_hot_tokens, labels)
-end = datetime.datetime.now()
-print('model training done, time consume:{}'.format(end-start))
 test_data = pd.read_csv('data/test.csv')
 
 test_sentences = []
 ids = []
-test_one_hot_tokens = []
 for index, row in test_data.iterrows():
     ids.append(row[0])
     text = row[1].lower()
+    sent_length = len(text.split(' '))
+    if sent_length > max_sent_length:
+        max_sent_length = sent_length
+    all_sentences.append(text)
     test_sentences.append(text)
-    
-    """
-    ids.append(row[0])
-    text = row[1].lower()
-#    tokens = set(jieba.lcut(text))
     tokens = work_prep(text)
-    one_hot_token = np.zeros(vocab_size+1, dtype=bool)
-    for token in tokens:
-        try:
-            one_hot_token[vocabs.index(token)] = True
-        except:
-            ## Mark as others
-            one_hot_token[vocab_size] = True
-    test_one_hot_tokens.append(one_hot_token)
-    """
-    
+    raw_tokens.append(list(tokens))
+    vocabs |= tokens
+
+end = datetime.datetime.now()
+collect_time = end - start
+
+print('collect sentences done, time consume:{}'.format(collect_time))
+gc.collect()
+
+start = datetime.datetime.now()
+vocab_size = len(vocabs)
+
+tokenizer = Tokenizer(vocab_size)
+
+tokenizer.fit_on_texts(all_sentences)
+
+x_train_seq = tokenizer.texts_to_sequences(train_sentences)
+
+x_train = sequence.pad_sequences(x_train_seq, max_sent_length)
+
+y_train = to_categorical(labels)
+
 x_test_seq = tokenizer.texts_to_sequences(test_sentences)
 
 x_test = sequence.pad_sequences(x_test_seq, max_sent_length)
 
+end = datetime.datetime.now()
+prepare_time = end - start
+
+print('prepare train / test data done, time consume:{}'.format(prepare_time))
+gc.collect()
+
+model = create_model(random_seed, vocab_size, max_sent_length)
+
+for epoch in range(train_epochs):
+    x_train, y_train = shuffle(x_train, y_train, random_state=epoch)
+    gc.collect()
+    historys = model.fit(x_train, y_train, epochs=1, batch_size=32, validation_split=0.1)
+    print(historys)
+    model.save('tmp/lstm_epoch_{}.model'.format(epoch))
+    gc.collect()
+
+
 predict_y = model.predict_classes(x_test)
 predict_y_prob = model.predict(x_test)
-    
-gc.collect()
-print('convert test data 2 one-hot done')
+
 
 test_result = pd.DataFrame()
 test_result['id'] = pd.Series(ids)
 
-test_data_prob = model.predict_proba(test_one_hot_tokens)
 test_data_prob = pd.DataFrame(predict_y_prob, columns=['EAP','HPL','MWS'])
 
 print('model inference done')
@@ -178,4 +161,4 @@ test_result['EAP'] = test_data_prob['EAP']
 test_result['HPL'] = test_data_prob['HPL']
 test_result['MWS'] = test_data_prob['MWS']
 
-test_result.to_csv('tmp/lstm_nltk_1epoch.csv', index=False)
+test_result.to_csv('tmp/lstm_nltk_{}_epoch.csv'.format(train_epochs), index=False)
