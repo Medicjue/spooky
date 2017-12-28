@@ -50,3 +50,9 @@ Result: 2.42336
 LSTM 10 epochs
 NLTK
 Result: 5.45540
+
+12/28
+VDCNN 50 epochs
+Result: 7.89523
+URL: https://github.com/zonetrooper32/VDCNN
+
