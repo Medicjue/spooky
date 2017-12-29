@@ -1,5 +1,11 @@
 Spooky Author Identification Kaggle Competition
 -----------------------------------------------
+https://www.kaggle.com/c/spooky-author-identification
+
+============
+A concept replication of working experience
+============
+
 11/14
 Baseline Program
 1. Using Random Forest
@@ -24,7 +30,10 @@ Using SVM(Linear)
 Result: 0.60411
 
 11/18
-Download fasttext pretrain word vectors
+Concept Replication of Prof. Kung's Research
+Language Modeling by Clustering with Word Embeddings for Text Readability Assessment
+https://arxiv.org/abs/1709.01888
+Download fasttext pretrain word vectors:
 https://github.com/facebookresearch/fastText/blob/master/pretrained-vectors.md
 Using k-means to cluster vectors into 20 groups
 Convert text into histogram vectors
@@ -36,10 +45,8 @@ k-means into 40 groups
 Result: 1.04287
 
 11/21
-Apply fastText
+Use fastText program directly
 Result: 2.06847
-
-
 
 11/28
 LSTM 1 epoch
@@ -52,7 +59,9 @@ NLTK
 Result: 5.45540
 
 12/28
+Replication of Very Deep Convolutional Networks for Text Classification
+https://arxiv.org/abs/1606.01781
 VDCNN 50 epochs
 Result: 7.89523
-URL: https://github.com/zonetrooper32/VDCNN
+Based URL: https://github.com/zonetrooper32/VDCNN
 
